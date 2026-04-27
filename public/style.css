@@ -526,182 +526,84 @@ body {
     color: var(--primary);
 }
 
-/* Messages */
+/* ========== CHAT MESSAGE FIX ========== */
 .message {
     display: flex;
-    gap: 14px;
-    padding: 20px;
-    margin: 0 -20px;
-    animation: fadeIn 0.3s ease;
-    position: relative;
+    align-items: flex-end;
+    margin: 8px 0;
+    gap: 8px;
+    animation: fadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
+/* USER (KANAN) */
 .message.user {
-    background: var(--bg-secondary);
+    justify-content: flex-end;
 }
 
+/* BOT (KIRI) */
 .message.bot {
-    background: var(--bg-primary);
+    justify-content: flex-start;
 }
 
+/* AVATAR */
 .message-avatar {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
     flex-shrink: 0;
 }
 
-.user-avatar-icon {
-     background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-    color: white !important;
+/* posisi avatar user ke kanan */
+.message.user .message-avatar {
+    order: 2;
 }
 
-.bot-avatar-icon {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--primary) !important;
-}
-
+/* ===== BUBBLE ===== */
 .message-content {
-    flex: 1;
-    line-height: 1.7;
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 16px;
     font-size: 0.95rem;
-    color: var(--text-primary);
-    max-width: calc(100% - 60px);
+    line-height: 1.6;
+    word-wrap: break-word;
 }
 
+/* USER BUBBLE */
 .message.user .message-content {
-    text-align: right;
-    order: 1;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    border-radius: 16px 16px 4px 16px;
 }
 
-.message-content p {
-    margin-bottom: 12px;
-}
-
-.message-content p:last-child {
-    margin-bottom: 0;
-}
-
-.message-content a {
-    color: var(--primary);
-    text-decoration: none;
-    border-bottom: 1px solid var(--primary);
-    transition: all 0.2s;
-}
-
-.message-content a:hover {
-    color: var(--primary-hover);
-    border-bottom-color: var(--primary-hover);
-}
-
-.message-content pre {
-    background: #020617;
-    color: #d4d4d4;
-    padding: 16px;
-    border-radius: var(--radius-sm);
-    overflow-x: auto;
-    margin: 12px 0;
-    font-size: 0.88rem;
-    position: relative;
+/* BOT BUBBLE */
+.message.bot .message-content {
+    background: #1e293b;
+    color: var(--text-primary);
+    border-radius: 16px 16px 16px 4px;
     border: 1px solid var(--border);
 }
 
-.message-content code {
-    background: rgba(255,255,255,0.05);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'JetBrains Mono', 'Courier New', monospace;
-    font-size: 0.88em;
-    color: var(--primary);
+/* biar konten user ga ketabrak avatar */
+.message.user .message-content {
+    order: 1;
 }
 
-.message-content pre code {
-    background: none;
-    padding: 0;
-    color: #d4d4d4;
+/* TEXT FIX */
+.message-content p {
+    margin: 0;
 }
 
-.message-content ul, .message-content ol {
-    margin: 12px 0;
-    padding-left: 24px;
-}
-
-.message-content li {
-    margin: 6px 0;
-}
-
-.message-content strong {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.message-content h1, .message-content h2, .message-content h3 {
-    margin: 16px 0 8px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.message-content blockquote {
-    border-left: 3px solid var(--primary);
-    padding-left: 12px;
-    margin: 12px 0;
-    color: var(--text-secondary);
-}
-
-/* Code block copy button */
-.code-block-wrapper {
-    position: relative;
-    margin: 12px 0;
-}
-
-.copy-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: #d4d4d4;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.72rem;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.code-block-wrapper:hover .copy-btn {
-    opacity: 1;
-}
-
-.copy-btn:hover {
-    background: rgba(255,255,255,0.2);
-}
-
-/* Message Actions */
+/* ACTION BUTTON */
 .message-actions {
     display: flex;
-    gap: 8px;
-    margin-top: 12px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
+    gap: 6px;
+    margin-top: 8px;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: 0.2s;
 }
 
 .message.bot:hover .message-actions {
     opacity: 1;
 }
-
 .msg-copy-btn {
     display: flex;
     align-items: center;
