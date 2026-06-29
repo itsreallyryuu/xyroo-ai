@@ -394,8 +394,8 @@ function showWelcome() {
         <div class="welcome-screen" id="welcomeScreen">
             <div class="welcome-content">
                 <div class="welcome-logo-box"><img src="logo.png" alt="HACK AI"></div>
-                <div class="welcome-title">HACK_AI</div>
-                <p class="welcome-subtitle">Hey there! I'm Neko, your smart AI companion. Ask me anything!</p>
+                <div class="welcome-title">HACK AI</div>
+                <p class="welcome-subtitle">Explore, question, and break the boundaries of knowledge with me !</p>
                 ${isGuest ? `
                 <div class="guest-notice" onclick="openAuthModal()">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -407,7 +407,7 @@ function showWelcome() {
                 </div>` : ''}
                 <div class="topic-section">
                     <h3>Quick Topics</h3>
-                    <<div class="suggestion-chips">
+                    <div class="suggestion-chips">
     <button class="chip" onclick="sendQuickMessage('What is ethical hacking and how does it work?')">
         <div class="chip-icon red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
         <div class="chip-text"><strong>Ethical Hacking</strong><small>How it works</small></div>
@@ -423,10 +423,6 @@ function showWelcome() {
     <button class="chip" onclick="sendQuickMessage('Explain Linux terminal commands for beginners')">
         <div class="chip-icon green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
         <div class="chip-text"><strong>Linux Terminal</strong><small>Essential commands</small></div>
-    </button>
-    <button class="chip" onclick="sendQuickMessage('What is cryptography and how does encryption work?')">
-        <div class="chip-icon purple"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-        <div class="chip-text"><strong>Cryptography</strong><small>Encryption basics</small></div>
     </button>
     <button class="chip" onclick="sendQuickMessage('What is OSINT and how is it used in cybersecurity?')">
         <div class="chip-icon yellow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
