@@ -2,20 +2,28 @@ require('dotenv').config();
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// ========== SUPABASE ==========
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // ========== MULTI API KEY SETUP ==========
 const API_KEYS = [
     process.env.GEMINI_API_KEY_1,
     process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,  // Tambahin di .env kalau punya
-    process.env.GEMINI_API_KEY_4   // Tambahin di .env kalau punya
+    process.env.GEMINI_API_KEY_3,
+    process.env.GEMINI_API_KEY_4
+    process.env.GEMINI_API_KEY_5
 ].filter(Boolean);
 
 if (API_KEYS.length === 0) {
-    console.error('ERROR: Tidak ada API key yang valid');
+    console.error('ERROR: No valid API keys found');
     process.exit(1);
 }
 
@@ -36,24 +44,18 @@ class SmartKeyManager {
             lastUsed: 0
         }));
         this.currentIndex = 0;
-        this.globalRequestCount = 0;
-        this.circuitBreakerOpen = false;
-        this.circuitBreakerResetTime = 0;
     }
 
     getBestInstance() {
         const now = Date.now();
-        
-        // Reset cooldown
         this.instances.forEach(inst => {
             if (inst.cooldownUntil && now > inst.cooldownUntil) {
                 inst.failCount = 0;
                 inst.cooldownUntil = 0;
-                console.log(`${inst.name} cooldown selesai`);
+                console.log(`${inst.name} cooldown finished`);
             }
         });
 
-        // Sort by: availability > success rate > response time > limit
         const available = this.instances
             .filter(inst => inst.cooldownUntil === 0 && inst.limitRemaining > 0)
             .sort((a, b) => {
@@ -63,7 +65,6 @@ class SmartKeyManager {
             });
 
         if (available.length === 0) {
-            // Emergency reset semua
             this.instances.forEach(inst => {
                 inst.failCount = 0;
                 inst.cooldownUntil = 0;
@@ -71,7 +72,6 @@ class SmartKeyManager {
             });
             return this.instances[0];
         }
-
         return available[0];
     }
 
@@ -80,14 +80,9 @@ class SmartKeyManager {
         instance.totalUsed++;
         instance.limitRemaining--;
         instance.lastUsed = Date.now();
-        
-        // Update avg response time
-        if (instance.avgResponseTime === 0) {
-            instance.avgResponseTime = responseTime;
-        } else {
-            instance.avgResponseTime = (instance.avgResponseTime * 0.7) + (responseTime * 0.3);
-        }
-        
+        instance.avgResponseTime = instance.avgResponseTime === 0
+            ? responseTime
+            : (instance.avgResponseTime * 0.7) + (responseTime * 0.3);
         instance.successRate = Math.min(100, instance.successRate + 5);
     }
 
@@ -95,11 +90,9 @@ class SmartKeyManager {
         instance.failCount++;
         instance.lastFail = Date.now();
         instance.successRate = Math.max(0, instance.successRate - 15);
-        
         const cooldownMinutes = Math.min(Math.pow(2, instance.failCount), 30);
         instance.cooldownUntil = Date.now() + (cooldownMinutes * 60 * 1000);
-        
-        console.log(`${instance.name} gagal (${errorType}). Cooldown: ${cooldownMinutes} menit`);
+        console.log(`${instance.name} failed (${errorType}). Cooldown: ${cooldownMinutes}m`);
     }
 
     getStatus() {
@@ -128,41 +121,27 @@ class ResponseCache {
     }
 
     getKey(message, historyLength) {
-        const hash = crypto.createHash('md5').update(message + historyLength).digest('hex');
-        return hash.substring(0, 16);
+        return crypto.createHash('md5').update(message + historyLength).digest('hex').substring(0, 16);
     }
 
     get(message, historyLength) {
         const key = this.getKey(message, historyLength);
         const item = this.cache.get(key);
-        
-        if (!item) {
-            this.misses++;
-            return null;
-        }
-        
-        if (Date.now() - item.timestamp > this.ttl) {
+        if (!item || Date.now() - item.timestamp > this.ttl) {
             this.cache.delete(key);
             this.misses++;
             return null;
         }
-        
         this.hits++;
         return item.data;
     }
 
     set(message, historyLength, data) {
         const key = this.getKey(message, historyLength);
-        
         if (this.cache.size >= this.maxSize) {
-            const firstKey = this.cache.keys().next().value;
-            this.cache.delete(firstKey);
+            this.cache.delete(this.cache.keys().next().value);
         }
-        
-        this.cache.set(key, {
-            data,
-            timestamp: Date.now()
-        });
+        this.cache.set(key, { data, timestamp: Date.now() });
     }
 
     getStats() {
@@ -175,11 +154,7 @@ class ResponseCache {
         };
     }
 
-    clear() {
-        this.cache.clear();
-        this.hits = 0;
-        this.misses = 0;
-    }
+    clear() { this.cache.clear(); this.hits = 0; this.misses = 0; }
 }
 
 const responseCache = new ResponseCache();
@@ -195,118 +170,79 @@ class RateLimiter {
     isAllowed(clientId) {
         const now = Date.now();
         const windowStart = Math.floor(now / this.windowMs) * this.windowMs;
-        
         if (!this.windows.has(clientId)) {
             this.windows.set(clientId, { count: 0, window: windowStart });
         }
-        
         const client = this.windows.get(clientId);
-        
-        if (client.window !== windowStart) {
-            client.count = 0;
-            client.window = windowStart;
-        }
-        
-        if (client.count >= this.maxRequests) {
-            return false;
-        }
-        
+        if (client.window !== windowStart) { client.count = 0; client.window = windowStart; }
+        if (client.count >= this.maxRequests) return false;
         client.count++;
         return true;
     }
-
-    getRemaining(clientId) {
-        const client = this.windows.get(clientId);
-        if (!client) return this.maxRequests;
-        return Math.max(0, this.maxRequests - client.count);
-    }
 }
 
-const rateLimiter = new RateLimiter(60000, 30); // 30 request per menit
+const rateLimiter = new RateLimiter(60000, 30);
 
-// ========== SYSTEM PROMPT XYROO AI ==========
-const SYSTEM_PROMPT = `Kamu adalah Xyroo AI, asisten pribadi yang dibuat oleh Ryuudev (juga dikenal sebagai itsreallyryuu).
+// ========== SYSTEM PROMPT ==========
+const SYSTEM_PROMPT = `You are Neko AI, a smart and friendly AI assistant created by Adann Dev (also known as itsreallyryuu on GitHub).
 
-TENTANG RYUUDEV:
-- Nama: Ryuudev / itsreallyryuu
-- Skill: Web developer, programmer, tech enthusiast
-- Project: Xyroo AI adalah karya terbaiknya
-- Filosofi: "Belajar itu tidak harus mahal, yang penting konsisten dan enjoy"
+ABOUT THE CREATOR:
+- Name: Adann Dev / itsreallyryuu (GitHub)
+- Role: Web developer and tech enthusiast
+- Project: Neko AI is one of his proudest creations
+- Philosophy: "Learning doesn't have to be expensive, just be consistent and enjoy the process"
 
-GAYA BICARA:
-1. NGOBROL kayak teman, santai dan asik
-2. JANGAN pakai angka romawi atau daftar panjang membosankan
-3. JANGAN terlalu formal, pakai bahasa sehari-hari
-4. JAWAB singkat tapi padat, maksimal 3-4 paragraf
-5. Bisa bercanda dan santai, tapi tetap informatif
-6. JANGAN ngasih respons kepotong
-7. JANGAN pakai emoji, gunakan ekspresi teks atau tanda baca
+PERSONALITY & TONE:
+1. Talk like a friendly companion — casual, warm, and fun
+2. Avoid overly formal language; keep it natural and approachable
+3. Be concise but informative — max 3-4 paragraphs unless detail is needed
+4. Light humor is welcome, but stay helpful
+5. Never cut off responses mid-sentence
+6. No emoji — use punctuation and text expression instead
 
-FORMAT OUTPUT:
-- Gunakan markdown untuk formatting (bold, italic, code block, list)
-- Untuk code: gunakan triple backtick dengan bahasa
-- Untuk list: gunakan bullet points atau numbered list
-- Untuk table: gunakan markdown table kalau perlu
+OUTPUT FORMAT:
+- Use markdown for formatting (bold, italic, code blocks, lists)
+- For code: use triple backtick with language name
+- For lists: use bullet points or numbered lists
+- For tables: use markdown tables when appropriate
 
-KALAU DITANYA SIAPA PEMBUATMU:
-"Aku dibuat oleh Ryuudev (itsreallyryuu)! Dia seorang web developer yang passionate banget sama teknologi. Kalau kamu suka sama project-projectnya, bisa support dia di https://trakteer.id/ryuu_san2/gift biar dia makin semangat bikin project keren lainnya!"
+IF ASKED WHO MADE YOU:
+"I was made by Adann Dev (itsreallyryuu on GitHub)! He's a passionate web developer who loves building things that actually help people. If you enjoy using Neko AI, you can support him at https://trakteer.id/ryuu_san2/gift — it means a lot!"
 
-KALAU DITANYA TENTANG RYUUDEV:
-"Ryuudev itu web developer yang passionate banget sama teknologi. Dia suka bikin project-project yang bisa bantu orang, kayak Xyroo AI ini. Dia percaya belajar teknologi tidak harus mahal, yang penting konsisten. Kalau mau support perjalanannya, bisa cek https://trakteer.id/ryuu_san2/gift ya!"
+IF ASKED ABOUT ADANN DEV:
+"Adann Dev is a web developer who genuinely loves technology and building useful projects. He believes learning tech shouldn't be expensive — just consistent and enjoyable. You can find his work on GitHub at itsreallyryuu, and support him at https://trakteer.id/ryuu_san2/gift!"
 
-KALAU USER BILANG TERIMA KASIH ATAU PUAS:
-"Sama-sama! Seneng banget bisa bantu. Kalau kamu suka sama Xyroo AI ini, boleh dong support developer-nya Ryuudev di https://trakteer.id/ryuu_san2/gift? Biar dia makin semangat bikin project keren lainnya!"
+IF USER SAYS THANK YOU OR IS SATISFIED:
+"Glad I could help! If you're enjoying Neko AI, consider supporting Adann Dev at https://trakteer.id/ryuu_san2/gift — he'd really appreciate it!"
 
-PROMOSI TRAKTEER (sewajarnya, jangan spam):
-- Kalau user nanya "gimana cara support" atau "donasi ke mana" -> kasih link Trakteer
-- Kalau user bilang terima kasih atau puas -> sebut Trakteer sekali
-- JANGAN promosiin Trakteer di setiap pesan, cuma di momen yang pas`;
+TRAKTEER PROMOTION (natural, never spammy):
+- Only mention when user asks how to support or says thanks
+- Never promote in every message`;
 
-// ========== SMART HISTORY MANAGER ==========
+// ========== HISTORY MANAGER ==========
 class HistoryManager {
-    constructor(maxTokens = 8000) {
-        this.maxTokens = maxTokens;
-        this.estimatedTokens = 0;
-    }
+    constructor(maxTokens = 8000) { this.maxTokens = maxTokens; }
 
-    estimateTokens(text) {
-        // Rough estimate: ~4 chars per token
-        return Math.ceil(text.length / 4);
-    }
+    estimateTokens(text) { return Math.ceil(text.length / 4); }
 
     optimizeHistory(history) {
         if (!history || history.length === 0) return [];
-        
         let totalTokens = 0;
         const optimized = [];
-        
-        // Start from newest, keep until limit
         for (let i = history.length - 1; i >= 0; i--) {
-            const msg = history[i];
-            const text = msg.parts?.[0]?.text || '';
+            const text = history[i].parts?.[0]?.text || '';
             const tokens = this.estimateTokens(text);
-            
-            if (totalTokens + tokens > this.maxTokens && optimized.length > 0) {
-                break;
-            }
-            
+            if (totalTokens + tokens > this.maxTokens && optimized.length > 0) break;
             totalTokens += tokens;
-            optimized.unshift(msg);
+            optimized.unshift(history[i]);
         }
-        
         return optimized;
     }
 
     createSystemHistory() {
         return [
-            {
-                role: 'user',
-                parts: [{ text: 'Siapa kamu?' }]
-            },
-            {
-                role: 'model',
-                parts: [{ text: 'Halo! Aku Xyroo AI, asisten pribadi buatan Ryuudev (itsreallyryuu). Aku di sini buat nemenin kamu ngobrol, belajar, atau apa aja deh. Mau tanya apa?' }]
-            }
+            { role: 'user', parts: [{ text: 'Who are you?' }] },
+            { role: 'model', parts: [{ text: "Hey! I'm Neko AI, a smart assistant made by Adann Dev (itsreallyryuu on GitHub). I'm here to help you with anything — coding, learning, or just chatting. What's on your mind?" }] }
         ];
     }
 }
@@ -317,208 +253,236 @@ const historyManager = new HistoryManager();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
-// Request logging
 app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
-        const duration = Date.now() - start;
-        console.log(`${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+        console.log(`${req.method} ${req.path} - ${res.statusCode} - ${Date.now() - start}ms`);
     });
     next();
 });
+
+// ========== AUTH MIDDLEWARE ==========
+async function verifyToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        req.user = null;
+        return next();
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        req.user = error ? null : user;
+    } catch {
+        req.user = null;
+    }
+    next();
+}
+
+// ========== USAGE LIMIT HELPERS ==========
+const GUEST_LIMIT = 3;
+const USER_LIMIT = 100;
+
+async function checkAndIncrementUsage(userId) {
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+        .from('usage_limits')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .single();
+
+    if (error && error.code === 'PGRST116') {
+        // No row yet, create it
+        await supabase.from('usage_limits').insert({
+            user_id: userId,
+            date: today,
+            message_count: 1
+        });
+        return { allowed: true, count: 1, remaining: USER_LIMIT - 1 };
+    }
+
+    if (data.message_count >= USER_LIMIT) {
+        return { allowed: false, count: data.message_count, remaining: 0 };
+    }
+
+    await supabase
+        .from('usage_limits')
+        .update({ message_count: data.message_count + 1 })
+        .eq('user_id', userId)
+        .eq('date', today);
+
+    return {
+        allowed: true,
+        count: data.message_count + 1,
+        remaining: USER_LIMIT - (data.message_count + 1)
+    };
+}
+
+async function getUserUsage(userId) {
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+        .from('usage_limits')
+        .select('message_count')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .single();
+    const count = data?.message_count || 0;
+    return { count, remaining: USER_LIMIT - count };
+}
 
 // ========== ENDPOINTS ==========
 
 // Health check
 app.get('/api/health', (req, res) => {
-    const status = keyManager.getStatus();
-    const totalRemaining = status.reduce((sum, s) => sum + (s.status === 'active' ? s.remaining : 0), 0);
-    
     res.json({
         status: 'healthy',
         uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        keys: status,
-        totalRemaining,
+        keys: keyManager.getStatus(),
         cache: responseCache.getStats(),
         timestamp: new Date().toISOString()
     });
 });
 
-// Cache stats
-app.get('/api/cache', (req, res) => {
-    res.json(responseCache.getStats());
+// ========== USAGE ENDPOINT ==========
+app.get('/api/usage', verifyToken, async (req, res) => {
+    if (!req.user) {
+        return res.json({ isGuest: true, limit: GUEST_LIMIT });
+    }
+    const usage = await getUserUsage(req.user.id);
+    res.json({
+        isGuest: false,
+        limit: USER_LIMIT,
+        count: usage.count,
+        remaining: usage.remaining
+    });
 });
 
-// Clear cache
-app.delete('/api/cache', (req, res) => {
-    responseCache.clear();
-    res.json({ success: true, message: 'Cache cleared' });
+// ========== HISTORY ENDPOINTS ==========
+
+// Get all conversations
+app.get('/api/conversations', verifyToken, async (req, res) => {
+    if (!req.user) return res.json({ conversations: [] });
+
+    const { data, error } = await supabase
+        .from('conversations')
+        .select('id, title, created_at, updated_at')
+        .eq('user_id', req.user.id)
+        .order('updated_at', { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ conversations: data || [] });
 });
 
-// Streaming chat endpoint
-app.post('/api/chat/stream', async (req, res) => {
+// Create conversation
+app.post('/api/conversations', verifyToken, async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { title } = req.body;
+    const { data, error } = await supabase
+        .from('conversations')
+        .insert({ user_id: req.user.id, title: title || 'New Chat' })
+        .select()
+        .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ conversation: data });
+});
+
+// Rename conversation
+app.patch('/api/conversations/:id', verifyToken, async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { title } = req.body;
+    const { error } = await supabase
+        .from('conversations')
+        .update({ title, updated_at: new Date().toISOString() })
+        .eq('id', req.params.id)
+        .eq('user_id', req.user.id);
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+});
+
+// Delete conversation
+app.delete('/api/conversations/:id', verifyToken, async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { error } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('id', req.params.id)
+        .eq('user_id', req.user.id);
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+});
+
+// Get messages in a conversation
+app.get('/api/conversations/:id/messages', verifyToken, async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data, error } = await supabase
+        .from('messages')
+        .select('id, role, content, created_at')
+        .eq('conversation_id', req.params.id)
+        .order('created_at', { ascending: true });
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ messages: data || [] });
+});
+
+// Save message
+app.post('/api/conversations/:id/messages', verifyToken, async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { role, content } = req.body;
+    const { error } = await supabase
+        .from('messages')
+        .insert({ conversation_id: req.params.id, role, content });
+
+    // Update conversation updated_at
+    await supabase
+        .from('conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', req.params.id)
+        .eq('user_id', req.user.id);
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+});
+
+// ========== CHAT ENDPOINT ==========
+app.post('/api/chat', verifyToken, async (req, res) => {
     const clientId = req.ip || req.headers['x-forwarded-for'] || 'unknown';
-    
+
     if (!rateLimiter.isAllowed(clientId)) {
         return res.status(429).json({
             success: false,
-            error: 'Terlalu banyak request. Coba lagi dalam 1 menit.'
+            error: 'Too many requests. Please wait a moment.'
         });
     }
 
-    const { message, history } = req.body;
-    
-    if (!message) {
-        return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
-    }
+    const { message, history, conversationId } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message cannot be empty' });
 
-    // Check cache
-    const cached = responseCache.get(message, history?.length || 0);
-    if (cached) {
-        return res.json({
-            success: true,
-            reply: cached,
-            cached: true,
-            usedKey: 'cache',
-            usedModel: 'cached'
-        });
-    }
-
-    // Set up SSE
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    const modelsToTry = [
-        'gemini-2.5-flash-lite',
-        'gemini-2.0-flash',
-        'gemini-2.0-flash-001',
-        'gemini-2.5-flash'
-    ];
-
-    let fullResponse = '';
-    let success = false;
-
-    for (let attempt = 0; attempt < Math.min(API_KEYS.length * 2, 6); attempt++) {
-        const instance = keyManager.getBestInstance();
-        const startTime = Date.now();
-        
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`[STREAM] ${instance.name} | ${modelName} | "${message.substring(0, 40)}..."`);
-                
-                const model = instance.genAI.getGenerativeModel({
-                    model: modelName,
-                    systemInstruction: SYSTEM_PROMPT
-                });
-
-                const chatHistory = historyManager.createSystemHistory();
-                const optimizedHistory = historyManager.optimizeHistory(history);
-                
-                if (optimizedHistory.length > 0) {
-                    chatHistory.push(...optimizedHistory);
-                }
-
-                const chat = model.startChat({
-                    history: chatHistory,
-                    generationConfig: {
-                        maxOutputTokens: 4096,
-                        temperature: 0.9,
-                        topP: 0.95,
-                        topK: 40
-                    }
-                });
-
-                const result = await chat.sendMessageStream(message);
-                
-                res.write(`data: ${JSON.stringify({ type: 'start', key: instance.name, model: modelName })}\n\n`);
-
-                for await (const chunk of result.stream) {
-                    const text = chunk.text();
-                    if (text) {
-                        fullResponse += text;
-                        res.write(`data: ${JSON.stringify({ type: 'chunk', text })}\n\n`);
-                    }
-                }
-
-                const responseTime = Date.now() - startTime;
-                keyManager.markSuccess(instance, responseTime);
-                
-                // Cache successful response
-                responseCache.set(message, history?.length || 0, fullResponse);
-                
-                res.write(`data: ${JSON.stringify({ 
-                    type: 'done', 
-                    fullResponse,
-                    usedKey: instance.name,
-                    usedModel: modelName,
-                    responseTime
-                })}\n\n`);
-                
-                success = true;
-                res.end();
-                return;
-
-            } catch (err) {
-                console.log(`[STREAM ERROR] ${instance.name} | ${modelName}: ${err.message}`);
-                
-                if (err.message.includes('quota') || 
-                    err.message.includes('rate limit') ||
-                    err.message.includes('429') ||
-                    err.message.includes('exhausted')) {
-                    keyManager.markFailed(instance, 'quota');
-                    break;
-                }
-                
-                if (err.message.includes('safety') || err.message.includes('blocked')) {
-                    res.write(`data: ${JSON.stringify({ 
-                        type: 'error', 
-                        error: 'Pesan ini diblokir oleh filter keamanan. Coba ubah kata-katanya.'
-                    })}\n\n`);
-                    res.end();
-                    return;
-                }
-            }
+    // Check usage limit
+    if (req.user) {
+        const usage = await checkAndIncrementUsage(req.user.id);
+        if (!usage.allowed) {
+            return res.status(429).json({
+                success: false,
+                error: "You've reached your 100 messages/day limit. Come back tomorrow!",
+                limitReached: true
+            });
         }
     }
-
-    if (!success) {
-        res.write(`data: ${JSON.stringify({ 
-            type: 'error', 
-            error: 'Semua API key sedang limit atau cooldown. Coba lagi dalam beberapa menit ya!'
-        })}\n\n`);
-        res.end();
-    }
-});
-
-// Regular chat endpoint (non-streaming)
-app.post('/api/chat', async (req, res) => {
-    const clientId = req.ip || req.headers['x-forwarded-for'] || 'unknown';
-    
-    if (!rateLimiter.isAllowed(clientId)) {
-        return res.status(429).json({
-            success: false,
-            error: 'Terlalu banyak request. Coba lagi dalam 1 menit.'
-        });
-    }
-
-    const { message, history } = req.body;
-    
-    if (!message) {
-        return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
-    }
+    // Guest limit is handled client-side via localStorage
 
     // Check cache
     const cached = responseCache.get(message, history?.length || 0);
     if (cached) {
-        return res.json({
-            success: true,
-            reply: cached,
-            cached: true,
-            usedKey: 'cache',
-            usedModel: 'cached'
-        });
+        return res.json({ success: true, reply: cached, cached: true });
     }
 
     const modelsToTry = [
@@ -531,11 +495,11 @@ app.post('/api/chat', async (req, res) => {
     for (let attempt = 0; attempt < Math.min(API_KEYS.length * 2, 6); attempt++) {
         const instance = keyManager.getBestInstance();
         const startTime = Date.now();
-        
+
         for (const modelName of modelsToTry) {
             try {
-                console.log(`[API] ${instance.name} | ${modelName} | "${message.substring(0, 40)}..."`);
-                
+                console.log(`[CHAT] ${instance.name} | ${modelName} | "${message.substring(0, 40)}..."`);
+
                 const model = instance.genAI.getGenerativeModel({
                     model: modelName,
                     systemInstruction: SYSTEM_PROMPT
@@ -543,10 +507,7 @@ app.post('/api/chat', async (req, res) => {
 
                 const chatHistory = historyManager.createSystemHistory();
                 const optimizedHistory = historyManager.optimizeHistory(history);
-                
-                if (optimizedHistory.length > 0) {
-                    chatHistory.push(...optimizedHistory);
-                }
+                if (optimizedHistory.length > 0) chatHistory.push(...optimizedHistory);
 
                 const chat = model.startChat({
                     history: chatHistory,
@@ -559,14 +520,30 @@ app.post('/api/chat', async (req, res) => {
                 });
 
                 const result = await chat.sendMessage(message);
-                const response = await result.response;
-                const text = response.text();
-
+                const text = result.response.text();
                 const responseTime = Date.now() - startTime;
+
                 keyManager.markSuccess(instance, responseTime);
-                
-                // Cache successful response
                 responseCache.set(message, history?.length || 0, text);
+
+                // Save messages to DB if logged in and conversationId provided
+                if (req.user && conversationId) {
+                    await supabase.from('messages').insert([
+                        { conversation_id: conversationId, role: 'user', content: message },
+                        { conversation_id: conversationId, role: 'assistant', content: text }
+                    ]);
+                    await supabase
+                        .from('conversations')
+                        .update({ updated_at: new Date().toISOString() })
+                        .eq('id', conversationId)
+                        .eq('user_id', req.user.id);
+                }
+
+                // Get updated usage
+                let usageInfo = null;
+                if (req.user) {
+                    usageInfo = await getUserUsage(req.user.id);
+                }
 
                 return res.json({
                     success: true,
@@ -574,24 +551,24 @@ app.post('/api/chat', async (req, res) => {
                     usedKey: instance.name,
                     usedModel: modelName,
                     responseTime,
-                    limitRemaining: instance.limitRemaining
+                    usage: usageInfo
                 });
 
             } catch (err) {
-                console.log(`[API ERROR] ${instance.name} | ${modelName}: ${err.message}`);
-                
-                if (err.message.includes('quota') || 
+                console.log(`[ERROR] ${instance.name} | ${modelName}: ${err.message}`);
+
+                if (err.message.includes('quota') ||
                     err.message.includes('rate limit') ||
                     err.message.includes('429') ||
                     err.message.includes('exhausted')) {
                     keyManager.markFailed(instance, 'quota');
                     break;
                 }
-                
+
                 if (err.message.includes('safety') || err.message.includes('blocked')) {
                     return res.status(400).json({
                         success: false,
-                        error: 'Pesan ini diblokir oleh filter keamanan. Coba ubah kata-katanya.'
+                        error: 'This message was blocked by the safety filter. Try rephrasing it.'
                     });
                 }
             }
@@ -600,36 +577,12 @@ app.post('/api/chat', async (req, res) => {
 
     res.status(503).json({
         success: false,
-        error: 'Semua API key sedang limit atau cooldown. Coba lagi dalam beberapa menit ya!',
-        retryAfter: 60
-    });
-});
-
-// Limit status
-app.get('/api/limit', (req, res) => {
-    res.json({
-        totalRemaining: keyManager.getStatus().reduce((sum, s) => sum + s.remaining, 0),
-        totalKeys: API_KEYS.length,
-        keys: keyManager.getStatus(),
-        cache: responseCache.getStats()
+        error: 'All API keys are currently on cooldown. Please try again in a few minutes.'
     });
 });
 
 // ========== START SERVER ==========
 app.listen(port, () => {
-    console.log(`
-╔══════════════════════════════════════════════════╗
-║           Xyroo AI Server v2.0                   ║
-║           Powered by Ryuudev                     ║
-╠══════════════════════════════════════════════════╣
-║  URL: http://localhost:${port}                      ║
-║  API Keys: ${API_KEYS.length} active                              ║
-║  Features:                                         ║
-║    ✓ Smart key rotation                           ║
-║    ✓ Response caching                             ║
-║    ✓ Rate limiting                                ║
-║    ✓ Streaming support                            ║
-║    ✓ Circuit breaker                              ║
-╚══════════════════════════════════════════════════╝
-    `);
+    console.log(`Neko AI server running on port ${port}`);
+    console.log(`API Keys loaded: ${API_KEYS.length}`);
 });

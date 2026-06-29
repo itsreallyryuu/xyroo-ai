@@ -1,8 +1,8 @@
 {
   "name": "ai",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Neko AI Chatbot by Adann Dev",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.108.2",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
   }
