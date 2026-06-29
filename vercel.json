@@ -1,9 +1,14 @@
 {
   "version": 2,
+  "outputDirectory": "public",
   "builds": [
     {
       "src": "server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -12,16 +17,8 @@
       "dest": "/server.js"
     },
     {
-      "src": "/style.css",
-      "dest": "/public/style.css"
-    },
-    {
-      "src": "/script.js",
-      "dest": "/public/script.js"
-    },
-    {
-      "src": "/logo.png",
-      "dest": "/public/logo.png"
+      "src": "/(.*\\.(css|js|png|ico|jpg|svg|json))",
+      "dest": "/public/$1"
     },
     {
       "src": "/(.*)",
