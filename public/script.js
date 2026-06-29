@@ -393,8 +393,8 @@ function showWelcome() {
     chatContainer.innerHTML = `
         <div class="welcome-screen" id="welcomeScreen">
             <div class="welcome-content">
-                <div class="welcome-logo"><img src="logo.png" alt="Neko AI"></div>
-                <h1>Neko AI</h1>
+                <div class="welcome-logo-box"><img src="logo.png" alt="HACK AI"></div>
+                <div class="welcome-title">HACK_AI</div>
                 <p class="welcome-subtitle">Hey there! I'm Neko, your smart AI companion. Ask me anything!</p>
                 ${isGuest ? `
                 <div class="guest-notice" onclick="openAuthModal()">
