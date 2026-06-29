@@ -407,32 +407,32 @@ function showWelcome() {
                 </div>` : ''}
                 <div class="topic-section">
                     <h3>Quick Topics</h3>
-                    <div class="suggestion-chips">
-                        <button class="chip" onclick="sendQuickMessage('Explain photosynthesis in a simple way')">
-                            <div class="chip-icon green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-                            <div><strong>Biology</strong><small>Photosynthesis basics</small></div>
-                        </button>
-                        <button class="chip" onclick="sendQuickMessage('Help me understand variables in programming')">
-                            <div class="chip-icon blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-                            <div><strong>Coding</strong><small>Programming basics</small></div>
-                        </button>
-                        <button class="chip" onclick="sendQuickMessage('Tell me about world history briefly')">
-                            <div class="chip-icon orange"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-                            <div><strong>History</strong><small>World history overview</small></div>
-                        </button>
-                        <button class="chip" onclick="sendQuickMessage('Give me effective study tips')">
-                            <div class="chip-icon purple"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></div>
-                            <div><strong>Study Tips</strong><small>Learn more effectively</small></div>
-                        </button>
-                        <button class="chip" onclick="sendQuickMessage('Explain the Pythagorean theorem with examples')">
-                            <div class="chip-icon red"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-                            <div><strong>Math</strong><small>Formulas & examples</small></div>
-                        </button>
-                        <button class="chip" onclick="sendQuickMessage('Tell me a funny joke!')">
-                            <div class="chip-icon yellow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
-                            <div><strong>Fun</strong><small>Jokes & entertainment</small></div>
-                        </button>
-                    </div>
+                    <<div class="suggestion-chips">
+    <button class="chip" onclick="sendQuickMessage('What is ethical hacking and how does it work?')">
+        <div class="chip-icon red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="chip-text"><strong>Ethical Hacking</strong><small>How it works</small></div>
+    </button>
+    <button class="chip" onclick="sendQuickMessage('Explain how SQL injection works and how to prevent it')">
+        <div class="chip-icon orange"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+        <div class="chip-text"><strong>SQL Injection</strong><small>Attack & prevention</small></div>
+    </button>
+    <button class="chip" onclick="sendQuickMessage('What is network security and common protocols?')">
+        <div class="chip-icon blue"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
+        <div class="chip-text"><strong>Network Security</strong><small>Protocols & defense</small></div>
+    </button>
+    <button class="chip" onclick="sendQuickMessage('Explain Linux terminal commands for beginners')">
+        <div class="chip-icon green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+        <div class="chip-text"><strong>Linux Terminal</strong><small>Essential commands</small></div>
+    </button>
+    <button class="chip" onclick="sendQuickMessage('What is cryptography and how does encryption work?')">
+        <div class="chip-icon purple"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="chip-text"><strong>Cryptography</strong><small>Encryption basics</small></div>
+    </button>
+    <button class="chip" onclick="sendQuickMessage('What is OSINT and how is it used in cybersecurity?')">
+        <div class="chip-icon yellow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <div class="chip-text"><strong>OSINT</strong><small>Intelligence gathering</small></div>
+    </button>
+</div>
                 </div>
             </div>
         </div>`;
@@ -862,4 +862,16 @@ async function handleForgotPassword() {
 
     successEl.style.display = 'block';
     btn.textContent = 'Sent!';
+}
+
+// ===== KEYBOARD FIX MOBILE =====
+function scrollInputIntoView() {
+    setTimeout(() => {
+        const inputArea = document.getElementById('inputArea');
+        if (inputArea) {
+            inputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+        const wrapper = document.getElementById('chatWrapper');
+        if (wrapper) wrapper.scrollTop = wrapper.scrollHeight;
+    }, 300);
 }

@@ -1096,3 +1096,38 @@ body::before {
 }
 
 .sidebar-overlay.active { display: block; }
+
+/* ===== INPUT KEYBOARD FIX ===== */
+@supports (-webkit-touch-callout: none) {
+    .main-content {
+        height: -webkit-fill-available;
+    }
+}
+
+.input-area {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+/* ===== TEXT COLOR FIX ===== */
+.welcome-subtitle { color: #c0c0d0 !important; }
+.welcome-tagline { color: #808090 !important; }
+.terminal-line { color: #606070 !important; }
+.chip-text strong { color: #e8e8f0 !important; }
+.chip-text small { color: #909090 !important; }
+.section-title { color: #606070 !important; }
+.history-item { color: #808090 !important; }
+.history-item.active { color: var(--primary) !important; }
+.history-item:hover { color: #e8e8f0 !important; }
+.user-info span { color: #808090 !important; }
+.limit-text, #limitText { color: #707080 !important; }
+.support-text { color: #505060 !important; }
+.logo-tagline { color: #505060 !important; }
+.input-hint { color: #404050 !important; }
+.modal-subtitle { color: #707080 !important; }
+.form-label { color: #606070 !important; }
+.modal-footer { color: #606070 !important; }
+.stat-label { color: #606070 !important; }
+.profile-email { color: #606070 !important; }
+.section-title::before { opacity: 0.5; }
