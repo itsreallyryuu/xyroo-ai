@@ -822,3 +822,44 @@ function fetchAPI(path, options = {}) {
     if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
     return fetch(path, { ...options, headers: { ...headers, ...(options.headers || {}) } });
 }
+
+// ========== FORGOT PASSWORD ==========
+function switchToForgot() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'block';
+}
+
+async function handleForgotPassword() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    const errEl = document.getElementById('forgotError');
+    const successEl = document.getElementById('forgotSuccess');
+    const btn = document.getElementById('forgotBtn');
+
+    errEl.classList.remove('show');
+    successEl.style.display = 'none';
+
+    if (!email) {
+        errEl.textContent = 'Please enter your email.';
+        errEl.classList.add('show');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://nekoaichatbot.vercel.app/reset-password.html'
+    });
+
+    if (error) {
+        errEl.textContent = error.message;
+        errEl.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Send Reset Link';
+        return;
+    }
+
+    successEl.style.display = 'block';
+    btn.textContent = 'Sent!';
+}
