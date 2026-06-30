@@ -1,6 +1,6 @@
 // ========== SUPABASE INIT ==========
 const SUPABASE_URL = 'https://rkfabzgsvzwffpisounp.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_gU4SL_XQSmWulTN_yHw_4g_HBL6KF3V';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZmFiemdzdnp3ZmZwaXNvdW5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1NTY5MzAsImV4cCI6MjA5ODEzMjkzMH0.GrdiGXEnEud5GSQv-D9_4_etfsN3w1HoNDun0GqZBp0';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
