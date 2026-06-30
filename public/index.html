@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
-    <title>HACK AI</title>
+    <title>Hack AI</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="stylesheet" href="style.css">
@@ -12,23 +12,15 @@
 <body>
 <div class="app">
 
-    <button class="floating-menu-btn" onclick="toggleSidebar()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-    </button>
-
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
                 <div class="logo-icon">
-                    <img src="logo.png" alt="HACK AI">
+                    <img src="logo.png" alt="Hack AI">
                 </div>
                 <div>
-                    <div class="logo-name">HACK AI</div>
-                    <div class="logo-tagline">by adann_dev</div>
+                    <div class="logo-name">Hack AI</div>
+                    <div class="logo-tagline">by Adanndev</div>
                 </div>
             </div>
             <button class="sidebar-toggle" onclick="toggleSidebar()">
@@ -89,6 +81,22 @@
 
     <main class="main-content">
 
+        <div class="mobile-header" id="mobileHeader">
+            <button class="menu-btn" onclick="toggleSidebar()" id="menuBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="menuIcon">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+            <div class="mobile-logo">Hack AI</div>
+            <button class="new-chat-mobile" onclick="newChat()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+            </button>
+        </div>
+
         <div class="chat-wrapper" id="chatWrapper">
             <div class="chat-container" id="chatContainer"></div>
         </div>
@@ -96,10 +104,10 @@
         <div class="input-area" id="inputArea">
             <div class="input-wrapper">
                 <div class="input-box">
-                    <span class="input-prefix">$</span>
+                    <span class="input-prefix">></span>
                     <textarea
                         id="userInput"
-                        placeholder="enter command..."
+                        placeholder="Chat with Hack AI..."
                         rows="1"
                         oninput="autoResize(this)"
                         onkeydown="handleKeydown(event)"
@@ -128,7 +136,7 @@
 
         <div id="loginForm">
             <div class="modal-header">
-                <div class="modal-logo-text">HACK AI</div>
+                <div class="modal-logo-text">Hack AI</div>
                 <div class="modal-title">Authenticate</div>
                 <div class="modal-subtitle">sign in to your account</div>
             </div>
@@ -144,7 +152,7 @@
             <button class="btn-primary" id="loginBtn" onclick="handleLogin()">Access System</button>
             <div style="text-align:center;margin-top:10px;">
                 <a onclick="switchToForgot()" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);cursor:pointer;letter-spacing:0.5px;">
-                    // forgot password?
+                    forgot password?
                 </a>
             </div>
             <div class="modal-footer">
@@ -154,7 +162,7 @@
 
         <div id="registerForm" style="display:none;">
             <div class="modal-header">
-                <div class="modal-logo-text">HACK AI</div>
+                <div class="modal-logo-text">Hack AI</div>
                 <div class="modal-title">Register</div>
                 <div class="modal-subtitle">create account — 100 req/day free</div>
             </div>
@@ -179,7 +187,7 @@
 
         <div id="forgotForm" style="display:none;">
             <div class="modal-header">
-                <div class="modal-logo-text">HACK AI</div>
+                <div class="modal-logo-text">Hack AI</div>
                 <div class="modal-title">Reset Access</div>
                 <div class="modal-subtitle">send password reset link</div>
             </div>
@@ -189,7 +197,7 @@
                 <div class="form-error" id="forgotError"></div>
             </div>
             <div id="forgotSuccess" style="display:none;text-align:center;padding:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:4px;font-family:var(--mono);font-size:0.68rem;color:#22c55e;margin-bottom:12px;">
-                // reset link sent — check your inbox
+                reset link sent — check your inbox
             </div>
             <button class="btn-primary" id="forgotBtn" onclick="handleForgotPassword()">Send Reset Link</button>
             <div class="modal-footer">
@@ -199,12 +207,12 @@
 
         <div id="resendForm" style="display:none;">
             <div class="modal-header">
-                <div class="modal-logo-text">HACK AI</div>
+                <div class="modal-logo-text">Hack AI</div>
                 <div class="modal-title">Verify Email</div>
                 <div class="modal-subtitle">your email is not confirmed yet</div>
             </div>
             <div id="resendSuccess" style="display:none;text-align:center;padding:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:4px;font-family:var(--mono);font-size:0.68rem;color:#22c55e;margin-bottom:12px;">
-                // verification email sent — check your inbox
+                verification email sent — check your inbox
             </div>
             <p style="font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);text-align:center;margin-bottom:16px;line-height:1.6;">
                 We sent a confirmation link to your email when you registered. Check your inbox (and spam folder), then click the link to activate your account.
@@ -226,7 +234,7 @@
             </svg>
         </button>
         <div class="modal-header">
-            <div class="modal-logo-text">HACK AI</div>
+            <div class="modal-logo-text">Hack AI</div>
             <div class="modal-title">User Profile</div>
             <div class="modal-subtitle">account information</div>
         </div>
