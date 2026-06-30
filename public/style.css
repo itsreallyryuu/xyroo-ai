@@ -726,7 +726,7 @@ body::before {
 
 .input-box {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 10px;
     background: var(--bg-input);
     border: 1px solid var(--border);
@@ -737,13 +737,11 @@ body::before {
 
 
 .input-prefix {
-    font-family: var(--mono);
     font-size: 0.85rem;
     color: var(--primary);
     flex-shrink: 0;
-    line-height: 22px;
-    align-self: flex-end;
-    margin-bottom: 1px;
+    display: flex;
+    align-items: center;
     user-select: none;
 }
 
