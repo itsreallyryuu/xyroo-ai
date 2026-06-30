@@ -839,7 +839,7 @@ async function handleForgotPassword() {
     btn.textContent = 'Sending...';
 
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://nekoaichatbot.vercel.app/reset-password.html'
+        redirectTo: 'https://hackaiweb.vercel.app/reset-password.html'
     });
 
     if (error) {
