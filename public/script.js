@@ -385,9 +385,6 @@ function showWelcome() {
                 <div class="welcome-title">HACK AI</div>
                 <div class="welcome-tagline">Advanced AI System v2.0</div>
                 <div class="welcome-subtitle">// Initializing secure connection...<br>// AI core online. Ready for input.</div>
-                <div class="terminal-line">
-                    <span class="t-prefix">root@hackai:~$</span> awaiting input<span class="cursor-blink"></span>
-                </div>
                 ${isGuest ? `
                 <div class="guest-notice" onclick="openAuthModal()">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
