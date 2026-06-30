@@ -81,7 +81,7 @@
 
     <main class="main-content">
 
-        <div class="mobile-header">
+        <div class="mobile-header" id="mobileHeader">
             <button class="menu-btn" onclick="toggleSidebar()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="3" y1="12" x2="21" y2="12"/>
@@ -103,63 +103,13 @@
         </div>
 
         <div class="chat-wrapper" id="chatWrapper">
-            <div class="chat-container" id="chatContainer">
-                <div class="welcome-screen" id="welcomeScreen">
-                    <div class="welcome-content">
-                        <div class="welcome-logo-box">
-                            <img src="logo.png" alt="HACK AI">
-                        </div>
-                        <div class="welcome-title">HACK AI</div>
-                        <div class="welcome-tagline">Advanced AI System v2.0</div>
-                        <div class="welcome-subtitle">// Initializing secure connection...<br>// AI core online. Ready for input.</div>
-                        <div class="terminal-line">
-                            <span class="t-prefix">root@hackai:~$</span> awaiting input<span class="cursor-blink"></span>
-                        </div>
-
-                        <div class="guest-notice" id="guestNotice" onclick="openAuthModal()">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <line x1="12" y1="8" x2="12" y2="12"/>
-                                <line x1="12" y1="16" x2="12.01" y2="16"/>
-                            </svg>
-                            [GUEST] 3 req/day — login for 100/day
-                        </div>
-
-                        <div class="topic-section">
-                            <h3>Quick Commands</h3>
-                            <div class="suggestion-chips">
-                                <button class="chip" onclick="sendQuickMessage('What is ethical hacking and how does it work?')">
-                                    <div class="chip-icon red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                                    <div class="chip-text"><strong>Ethical Hacking</strong><small>How it works</small></div>
-                                </button>
-                                <button class="chip" onclick="sendQuickMessage('Explain how SQL injection works and how to prevent it')">
-                                    <div class="chip-icon orange"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
-                                    <div class="chip-text"><strong>SQL Injection</strong><small>Attack & prevention</small></div>
-                                </button>
-                                <button class="chip" onclick="sendQuickMessage('What is network security and common protocols?')">
-                                    <div class="chip-icon blue"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
-                                    <div class="chip-text"><strong>Network Security</strong><small>Protocols & defense</small></div>
-                                </button>
-                                <button class="chip" onclick="sendQuickMessage('Explain Linux terminal commands for beginners')">
-                                    <div class="chip-icon green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
-                                    <div class="chip-text"><strong>Linux Terminal</strong><small>Essential commands</small></div>
-                                </button>
-                                
-                                <button class="chip" onclick="sendQuickMessage('What is OSINT and how is it used in cybersecurity?')">
-                                    <div class="chip-icon yellow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-                                    <div class="chip-text"><strong>OSINT</strong><small>Intelligence gathering</small></div>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div class="chat-container" id="chatContainer"></div>
         </div>
 
         <div class="input-area" id="inputArea">
             <div class="input-wrapper">
                 <div class="input-box">
-                    <span class="input-prefix">></span>
+                    <span class="input-prefix">$</span>
                     <textarea
                         id="userInput"
                         placeholder="enter command..."
@@ -175,6 +125,7 @@
                         </svg>
                     </button>
                 </div>
+                <p class="input-hint">// hack_ai may produce errors · verify critical info · by adann_dev</p>
             </div>
         </div>
     </main>
@@ -255,6 +206,25 @@
                 // reset link sent — check your inbox
             </div>
             <button class="btn-primary" id="forgotBtn" onclick="handleForgotPassword()">Send Reset Link</button>
+            <div class="modal-footer">
+                <a onclick="switchToLogin()">Back to login</a>
+            </div>
+        </div>
+
+        <!-- Resend Verification Form -->
+        <div id="resendForm" style="display:none;">
+            <div class="modal-header">
+                <div class="modal-logo-text">HACK AI</div>
+                <div class="modal-title">Verify Email</div>
+                <div class="modal-subtitle">your email is not confirmed yet</div>
+            </div>
+            <div id="resendSuccess" style="display:none;text-align:center;padding:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:4px;font-family:var(--mono);font-size:0.68rem;color:#22c55e;margin-bottom:12px;">
+                // verification email sent — check your inbox
+            </div>
+            <p style="font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);text-align:center;margin-bottom:16px;line-height:1.6;">
+                We sent a confirmation link to your email when you registered. Check your inbox (and spam folder), then click the link to activate your account.
+            </p>
+            <button class="btn-primary" id="resendBtn" onclick="handleResendVerification()">Resend Email</button>
             <div class="modal-footer">
                 <a onclick="switchToLogin()">Back to login</a>
             </div>

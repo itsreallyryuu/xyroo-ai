@@ -24,7 +24,7 @@ let chats = [];
 
 // Guest usage (localStorage)
 const GUEST_LIMIT = 3;
-const GUEST_KEY = 'neko_guest_usage';
+const GUEST_KEY = 'hackai_guest_usage';
 
 function getGuestUsage() {
     try {
@@ -48,7 +48,7 @@ function today() {
 }
 
 // Local chats for guest
-const LOCAL_KEY = 'neko_local_chats';
+const LOCAL_KEY = 'hackai_local_chats';
 
 function loadLocalChats() {
     try {
@@ -73,13 +73,11 @@ const limitText = document.getElementById('limitText');
 const limitDot = document.getElementById('limitDot');
 const userDisplayName = document.getElementById('userDisplayName');
 const authBtn = document.getElementById('authBtn');
-const guestNotice = document.getElementById('guestNotice');
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', async () => {
     userInput.focus();
 
-    // Listen to auth state
     sb.auth.onAuthStateChange(async (event, session) => {
         if (session) {
             currentUser = session.user;
@@ -104,7 +102,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ========== AUTH STATE HANDLERS ==========
 async function onLogin() {
-    // Update UI
     const { data: profile } = await sb
         .from('profiles')
         .select('username')
@@ -114,14 +111,9 @@ async function onLogin() {
     const name = profile?.username || currentUser.email.split('@')[0];
     userDisplayName.textContent = name;
 
-    // Hide auth button, show avatar as profile trigger
     authBtn.style.display = 'none';
     document.getElementById('userAvatarBtn').style.cursor = 'pointer';
 
-    // Hide guest notice
-    if (guestNotice) guestNotice.style.display = 'none';
-
-    // Load conversations from DB
     await loadConversations();
     updateLimitBadge();
 }
@@ -129,13 +121,10 @@ async function onLogin() {
 function onLogout() {
     currentUser = null;
     currentToken = null;
-    userDisplayName.textContent = 'Guest';
+    userDisplayName.textContent = 'anonymous';
     authBtn.style.display = 'block';
-    authBtn.textContent = 'Sign In';
+    authBtn.textContent = 'Login';
 
-    if (guestNotice) guestNotice.style.display = 'inline-flex';
-
-    // Load local chats
     chats = loadLocalChats();
     if (chats.length === 0) {
         chats = [createLocalChat()];
@@ -163,7 +152,7 @@ async function updateLimitBadge() {
     if (!currentUser) {
         const usage = getGuestUsage();
         const remaining = GUEST_LIMIT - usage.count;
-        limitText.textContent = `Guest: ${remaining}/${GUEST_LIMIT} messages left`;
+        limitText.textContent = `guest: ${remaining}/${GUEST_LIMIT} req left`;
         limitDot.className = 'limit-dot' + (remaining <= 1 ? ' danger' : '');
         return;
     }
@@ -172,11 +161,11 @@ async function updateLimitBadge() {
         const res = await fetchAPI('/api/usage');
         const data = await res.json();
         const remaining = data.remaining ?? 0;
-        limitText.textContent = `${remaining}/100 messages left today`;
+        limitText.textContent = `${remaining}/100 req left today`;
         limitDot.className = 'limit-dot' +
             (remaining <= 10 ? ' danger' : remaining <= 30 ? ' warning' : '');
     } catch {
-        limitText.textContent = 'Usage unavailable';
+        limitText.textContent = 'usage unavailable';
     }
 }
 
@@ -292,7 +281,6 @@ async function startRename(id, event) {
     const actionsEl = item.querySelector('.history-actions');
     const currentTitle = textEl.textContent;
 
-    // Replace text with input
     const input = document.createElement('input');
     input.className = 'history-rename-input';
     input.value = currentTitle;
@@ -331,7 +319,7 @@ async function startRename(id, event) {
 // ========== DELETE CHAT ==========
 async function deleteChat(id, event) {
     event.stopPropagation();
-    if (!confirm('Delete this chat?')) return;
+    if (!confirm('Delete this session?')) return;
 
     if (currentUser) {
         await fetchAPI(`/api/conversations/${id}`, { method: 'DELETE' });
@@ -352,7 +340,7 @@ async function deleteChat(id, event) {
 
 // ========== CLEAR ALL ==========
 async function clearAllChats() {
-    if (!confirm('Delete all chats? This cannot be undone.')) return;
+    if (!confirm('Delete all sessions? This cannot be undone.')) return;
 
     if (currentUser) {
         for (const chat of chats) {
@@ -395,55 +383,61 @@ function showWelcome() {
             <div class="welcome-content">
                 <div class="welcome-logo-box"><img src="logo.png" alt="HACK AI"></div>
                 <div class="welcome-title">HACK AI</div>
-                <p class="welcome-subtitle">Explore, question, and break the boundaries of knowledge with me !</p>
+                <div class="welcome-tagline">Advanced AI System v2.0</div>
+                <div class="welcome-subtitle">// Initializing secure connection...<br>// AI core online. Ready for input.</div>
+                <div class="terminal-line">
+                    <span class="t-prefix">root@hackai:~$</span> awaiting input<span class="cursor-blink"></span>
+                </div>
                 ${isGuest ? `
                 <div class="guest-notice" onclick="openAuthModal()">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
                         <line x1="12" y1="8" x2="12" y2="12"/>
                         <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    Guest: 3 messages/day — Sign in for 100/day
+                    [GUEST] 3 req/day — login for 100/day
                 </div>` : ''}
                 <div class="topic-section">
-                    <h3>Quick Topics</h3>
+                    <h3>Quick Commands</h3>
                     <div class="suggestion-chips">
-    <button class="chip" onclick="sendQuickMessage('What is ethical hacking and how does it work?')">
-        <div class="chip-icon red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <div class="chip-text"><strong>Ethical Hacking</strong><small>How it works</small></div>
-    </button>
-    <button class="chip" onclick="sendQuickMessage('Explain how SQL injection works and how to prevent it')">
-        <div class="chip-icon orange"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
-        <div class="chip-text"><strong>SQL Injection</strong><small>Attack & prevention</small></div>
-    </button>
-    <button class="chip" onclick="sendQuickMessage('What is network security and common protocols?')">
-        <div class="chip-icon blue"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
-        <div class="chip-text"><strong>Network Security</strong><small>Protocols & defense</small></div>
-    </button>
-    <button class="chip" onclick="sendQuickMessage('Explain Linux terminal commands for beginners')">
-        <div class="chip-icon green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
-        <div class="chip-text"><strong>Linux Terminal</strong><small>Essential commands</small></div>
-    </button>
-    <button class="chip" onclick="sendQuickMessage('What is OSINT and how is it used in cybersecurity?')">
-        <div class="chip-icon yellow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <div class="chip-text"><strong>OSINT</strong><small>Intelligence gathering</small></div>
-    </button>
-</div>
+                        <button class="chip" onclick="sendQuickMessage('What is ethical hacking and how does it work?')">
+                            <div class="chip-icon red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                            <div class="chip-text"><strong>Ethical Hacking</strong><small>How it works</small></div>
+                        </button>
+                        <button class="chip" onclick="sendQuickMessage('Explain how SQL injection works and how to prevent it')">
+                            <div class="chip-icon orange"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+                            <div class="chip-text"><strong>SQL Injection</strong><small>Attack & prevention</small></div>
+                        </button>
+                        <button class="chip" onclick="sendQuickMessage('What is network security and common protocols?')">
+                            <div class="chip-icon blue"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
+                            <div class="chip-text"><strong>Network Security</strong><small>Protocols & defense</small></div>
+                        </button>
+                        <button class="chip" onclick="sendQuickMessage('Explain Linux terminal commands for beginners')">
+                            <div class="chip-icon green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+                            <div class="chip-text"><strong>Linux Terminal</strong><small>Essential commands</small></div>
+                        </button>
+                        <button class="chip" onclick="sendQuickMessage('What is cryptography and how does encryption work?')">
+                            <div class="chip-icon purple"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+                            <div class="chip-text"><strong>Cryptography</strong><small>Encryption basics</small></div>
+                        </button>
+                        <button class="chip" onclick="sendQuickMessage('What is OSINT and how is it used in cybersecurity?')">
+                            <div class="chip-icon yellow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                            <div class="chip-text"><strong>OSINT</strong><small>Intelligence gathering</small></div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>`;
 }
-
 // ========== SEND MESSAGE ==========
 async function sendMessage() {
     const message = userInput.value.trim();
     if (!message || isLoading) return;
 
-    // Guest limit check
     if (!currentUser) {
         const usage = getGuestUsage();
         if (usage.count >= GUEST_LIMIT) {
-            showToast('Guest limit reached! Sign in for 100 messages/day.');
+            showToast('Guest limit reached! Login for 100 req/day.');
             openAuthModal();
             return;
         }
@@ -484,15 +478,15 @@ async function sendMessage() {
             addBotMessage(data.reply);
             if (data.usage) {
                 const remaining = data.usage.remaining ?? 0;
-                limitText.textContent = `${remaining}/100 messages left today`;
+                limitText.textContent = `${remaining}/100 req left today`;
                 limitDot.className = 'limit-dot' +
                     (remaining <= 10 ? ' danger' : remaining <= 30 ? ' warning' : '');
             }
         } else if (data.limitReached) {
-            addBotMessage("You've reached your daily limit of 100 messages. Come back tomorrow!");
+            addBotMessage("You've reached your daily limit of 100 requests. Come back tomorrow!");
             updateLimitBadge();
         } else {
-            addBotMessage('Sorry, something went wrong: ' + (data.error || 'Unknown error'));
+            addBotMessage('Error: ' + (data.error || 'Unknown error'));
         }
     } catch (err) {
         removeTypingIndicator(typingId);
@@ -690,11 +684,23 @@ function showToast(message) {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+// ========== KEYBOARD FIX MOBILE ==========
+function scrollInputIntoView() {
+    setTimeout(() => {
+        const inputArea = document.getElementById('inputArea');
+        if (inputArea) inputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        const wrapper = document.getElementById('chatWrapper');
+        if (wrapper) wrapper.scrollTop = wrapper.scrollHeight;
+    }, 300);
+}
+
 // ========== AUTH MODALS ==========
 function openAuthModal() {
     document.getElementById('authModal').classList.add('active');
     document.getElementById('loginForm').style.display = 'block';
     document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'none';
+    document.getElementById('resendForm').style.display = 'none';
 }
 
 function closeAuthModal() {
@@ -708,7 +714,15 @@ function switchToRegister() {
 
 function switchToLogin() {
     document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'none';
+    document.getElementById('resendForm').style.display = 'none';
     document.getElementById('loginForm').style.display = 'block';
+}
+
+function switchToForgot() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'block';
 }
 
 async function handleLogin() {
@@ -724,15 +738,26 @@ async function handleLogin() {
     const { error } = await sb.auth.signInWithPassword({ email, password });
 
     if (error) {
+        if (error.message.toLowerCase().includes('email not confirmed')) {
+            window.pendingResendEmail = email;
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('resendForm').style.display = 'block';
+            document.getElementById('resendSuccess').style.display = 'none';
+            document.getElementById('resendBtn').textContent = 'Resend Email';
+            document.getElementById('resendBtn').disabled = false;
+            btn.disabled = false;
+            btn.textContent = 'Access System';
+            return;
+        }
         errEl.textContent = error.message;
         errEl.classList.add('show');
         btn.disabled = false;
-        btn.textContent = 'Sign In';
+        btn.textContent = 'Access System';
         return;
     }
 
     closeAuthModal();
-    showToast('Welcome back!');
+    showToast('Access granted.');
 }
 
 async function handleRegister() {
@@ -745,7 +770,7 @@ async function handleRegister() {
     errEl.classList.remove('show');
 
     if (!username || username.length < 3) {
-        errEl.textContent = 'Username must be at least 3 characters.';
+        errEl.textContent = 'username must be at least 3 characters';
         errEl.classList.add('show');
         return;
     }
@@ -763,22 +788,84 @@ async function handleRegister() {
         return;
     }
 
-    // Update username in profiles
     if (data.user) {
-        await sb.from('profiles').upsert({
-            id: data.user.id,
-            username
-        });
+        await sb.from('profiles').upsert({ id: data.user.id, username });
     }
 
-    closeAuthModal();
-    showToast('Account created! Welcome to Neko AI.');
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('resendForm').style.display = 'block';
+    window.pendingResendEmail = email;
+    document.getElementById('resendSuccess').style.display = 'none';
+    document.getElementById('resendBtn').textContent = 'Resend Email';
+    document.getElementById('resendBtn').disabled = false;
+    showToast('Account created! Please verify your email.');
+}
+
+async function handleResendVerification() {
+    const btn = document.getElementById('resendBtn');
+    const successEl = document.getElementById('resendSuccess');
+    const email = window.pendingResendEmail;
+
+    if (!email) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    const { error } = await sb.auth.resend({ type: 'signup', email });
+
+    if (error) {
+        showToast(error.message);
+        btn.disabled = false;
+        btn.textContent = 'Resend Email';
+        return;
+    }
+
+    successEl.style.display = 'block';
+    btn.textContent = 'Sent!';
+}
+
+async function handleForgotPassword() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    const errEl = document.getElementById('forgotError');
+    const successEl = document.getElementById('forgotSuccess');
+    const btn = document.getElementById('forgotBtn');
+
+    errEl.classList.remove('show');
+    successEl.style.display = 'none';
+
+    if (!email) {
+        errEl.textContent = 'email required';
+        errEl.classList.add('show');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://nekoaichatbot.vercel.app/reset-password.html'
+    });
+
+    if (error) {
+        errEl.textContent = error.message;
+        errEl.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Send Reset Link';
+        return;
+    }
+
+    successEl.style.display = 'block';
+    btn.textContent = 'Sent!';
+    btn.disabled = true;
 }
 
 async function handleLogout() {
     await sb.auth.signOut();
     closeProfileModal();
-    showToast('Signed out successfully.');
+    showToast('Session terminated.');
 }
 
 // ========== PROFILE MODAL ==========
@@ -817,57 +904,4 @@ function fetchAPI(path, options = {}) {
     const headers = { 'Content-Type': 'application/json' };
     if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
     return fetch(path, { ...options, headers: { ...headers, ...(options.headers || {}) } });
-}
-
-// ========== FORGOT PASSWORD ==========
-function switchToForgot() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registerForm').style.display = 'none';
-    document.getElementById('forgotForm').style.display = 'block';
-}
-
-async function handleForgotPassword() {
-    const email = document.getElementById('forgotEmail').value.trim();
-    const errEl = document.getElementById('forgotError');
-    const successEl = document.getElementById('forgotSuccess');
-    const btn = document.getElementById('forgotBtn');
-
-    errEl.classList.remove('show');
-    successEl.style.display = 'none';
-
-    if (!email) {
-        errEl.textContent = 'Please enter your email.';
-        errEl.classList.add('show');
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Sending...';
-
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://nekoaichatbot.vercel.app/reset-password.html'
-    });
-
-    if (error) {
-        errEl.textContent = error.message;
-        errEl.classList.add('show');
-        btn.disabled = false;
-        btn.textContent = 'Send Reset Link';
-        return;
-    }
-
-    successEl.style.display = 'block';
-    btn.textContent = 'Sent!';
-}
-
-// ===== KEYBOARD FIX MOBILE =====
-function scrollInputIntoView() {
-    setTimeout(() => {
-        const inputArea = document.getElementById('inputArea');
-        if (inputArea) {
-            inputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
-        const wrapper = document.getElementById('chatWrapper');
-        if (wrapper) wrapper.scrollTop = wrapper.scrollHeight;
-    }, 300);
 }
